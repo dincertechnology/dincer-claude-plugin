@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "dincer-data": {
+      "type": "http",
+      "url": "https://3wsieuxc42.execute-api.eu-central-1.amazonaws.com/mcp"
+    }
+  }
+}

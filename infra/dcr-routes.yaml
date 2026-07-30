@@ -1,0 +1,27 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Public OAuth discovery and DCR routes for the Dincer MCP API
+
+Parameters:
+  ApiId:
+    Type: String
+    Default: 3wsieuxc42
+  IntegrationId:
+    Type: String
+    Default: erhhvbg
+
+Resources:
+  AuthorizationServerMetadataRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref ApiId
+      RouteKey: "GET /.well-known/oauth-authorization-server"
+      AuthorizationType: NONE
+      Target: !Sub "integrations/${IntegrationId}"
+
+  DynamicClientRegistrationRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref ApiId
+      RouteKey: "POST /oauth/register"
+      AuthorizationType: NONE
+      Target: !Sub "integrations/${IntegrationId}"

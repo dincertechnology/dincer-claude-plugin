@@ -1,0 +1,17 @@
+.env
+.env.*
+!.env.example
+.aws/
+*.key
+*.pem
+.DS_Store
+Thumbs.db
+*.log
+.aws-sam/
+samconfig.toml
+*.samconfig.toml
+infra/backend/build/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/

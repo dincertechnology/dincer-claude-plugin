@@ -1,0 +1,222 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: Cognito-protected read-only MCP server for two Dincer S3 workbooks
+
+Parameters:
+  DataBucketName:
+    Type: String
+    NoEcho: true
+    Description: Approved private S3 bucket name
+  DepotObjectKey:
+    Type: String
+    NoEcho: true
+    Description: Approved depot workbook object key
+  TransportObjectKey:
+    Type: String
+    NoEcho: true
+    Description: Approved transport workbook object key
+  CognitoDomainPrefix:
+    Type: String
+    Description: Globally unique lowercase Cognito domain prefix
+    AllowedPattern: "^[a-z0-9](?:[a-z0-9-]{1,61}[a-z0-9])?$"
+  CallbackPort:
+    Type: Number
+    Default: 8765
+    MinValue: 1024
+    MaxValue: 65535
+
+Globals:
+  Function:
+    Runtime: python3.12
+    Architectures: [x86_64]
+    MemorySize: 512
+    Timeout: 25
+    Tracing: Active
+
+Resources:
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      DeletionProtection: ACTIVE
+      UsernameAttributes: [email]
+      AutoVerifiedAttributes: [email]
+      MfaConfiguration: "OFF"
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: false
+      AccountRecoverySetting:
+        RecoveryMechanisms:
+          - Name: verified_email
+            Priority: 1
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 14
+          RequireLowercase: true
+          RequireUppercase: true
+          RequireNumbers: true
+          RequireSymbols: true
+          TemporaryPasswordValidityDays: 3
+
+  UserPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      Domain: !Ref CognitoDomainPrefix
+      UserPoolId: !Ref UserPool
+
+  ResourceServer:
+    Type: AWS::Cognito::UserPoolResourceServer
+    Properties:
+      Identifier: dincer-data
+      Name: Dincer Data MCP
+      UserPoolId: !Ref UserPool
+      Scopes:
+        - ScopeName: read
+          ScopeDescription: Read approved workbook data through MCP
+
+  UserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    DependsOn: ResourceServer
+    Properties:
+      ClientName: claude-code-public-plugin
+      UserPoolId: !Ref UserPool
+      GenerateSecret: false
+      PreventUserExistenceErrors: ENABLED
+      EnableTokenRevocation: true
+      AccessTokenValidity: 15
+      IdTokenValidity: 15
+      RefreshTokenValidity: 1
+      TokenValidityUnits:
+        AccessToken: minutes
+        IdToken: minutes
+        RefreshToken: days
+      AllowedOAuthFlowsUserPoolClient: true
+      AllowedOAuthFlows: [code]
+      AllowedOAuthScopes:
+        - openid
+        - email
+        - dincer-data/read
+      CallbackURLs:
+        - !Sub "http://localhost:${CallbackPort}/callback"
+        - "https://claude.ai/api/mcp/auth_callback"
+        - "https://claude.com/api/mcp/auth_callback"
+      LogoutURLs:
+        - !Sub "http://localhost:${CallbackPort}/"
+      SupportedIdentityProviders: [COGNITO]
+
+  HttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      StageName: "$default"
+      DefaultRouteSettings:
+        ThrottlingBurstLimit: 10
+        ThrottlingRateLimit: 5
+      Auth:
+        Authorizers:
+          CognitoJwt:
+            IdentitySource: "$request.header.Authorization"
+            JwtConfiguration:
+              issuer: !Sub "https://cognito-idp.${AWS::Region}.${AWS::URLSuffix}/${UserPool}"
+              audience:
+                - !Ref UserPoolClient
+
+  McpFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: backend/
+      Handler: app.handler
+      ReservedConcurrentExecutions: 10
+      Policies:
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action: s3:GetObject
+              Resource:
+                - !Sub "arn:${AWS::Partition}:s3:::${DataBucketName}/${DepotObjectKey}"
+                - !Sub "arn:${AWS::Partition}:s3:::${DataBucketName}/${TransportObjectKey}"
+      Environment:
+        Variables:
+          BUCKET_NAME: !Ref DataBucketName
+          DEPOT_KEY: !Ref DepotObjectKey
+          TRANSPORT_KEY: !Ref TransportObjectKey
+          COGNITO_ISSUER: !Sub "https://cognito-idp.${AWS::Region}.${AWS::URLSuffix}/${UserPool}"
+          COGNITO_SCOPE: dincer-data/read
+          COGNITO_CLIENT_ID: !Ref UserPoolClient
+          COGNITO_LOGIN_DOMAIN: !Sub "https://${CognitoDomainPrefix}.auth.${AWS::Region}.amazoncognito.com"
+          API_STAGE: ""
+          MAX_FILE_BYTES: "15728640"
+          MAX_SCAN_ROWS: "20000"
+      Events:
+        McpPost:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /mcp
+            Method: POST
+            Auth:
+              Authorizer: CognitoJwt
+              AuthorizationScopes: [dincer-data/read]
+        McpGet:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /mcp
+            Method: GET
+            Auth:
+              Authorizer: CognitoJwt
+              AuthorizationScopes: [dincer-data/read]
+        McpDelete:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /mcp
+            Method: DELETE
+            Auth:
+              Authorizer: CognitoJwt
+              AuthorizationScopes: [dincer-data/read]
+        ProtectedResourceMetadata:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /.well-known/oauth-protected-resource
+            Method: GET
+        AuthorizationServerMetadata:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /.well-known/oauth-authorization-server
+            Method: GET
+        DynamicClientRegistration:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /oauth/register
+            Method: POST
+
+  McpLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${McpFunction}"
+      RetentionInDays: 30
+
+Outputs:
+  McpUrl:
+    Value: !Sub "https://${HttpApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}/mcp"
+  CognitoUserPoolId:
+    Value: !Ref UserPool
+  CognitoClientId:
+    Value: !Ref UserPoolClient
+  CognitoIssuer:
+    Value: !Sub "https://cognito-idp.${AWS::Region}.${AWS::URLSuffix}/${UserPool}"
+  CognitoMetadataUrl:
+    Value: !Sub "https://cognito-idp.${AWS::Region}.${AWS::URLSuffix}/${UserPool}/.well-known/openid-configuration"
+  CognitoScope:
+    Value: dincer-data/read
+  CognitoLoginDomain:
+    Value: !Sub "https://${CognitoDomainPrefix}.auth.${AWS::Region}.amazoncognito.com"
+  CallbackUrl:
+    Value: !Sub "http://localhost:${CallbackPort}/callback"
+  ClaudeHostedCallbackUrls:
+    Value: "https://claude.ai/api/mcp/auth_callback,https://claude.com/api/mcp/auth_callback"

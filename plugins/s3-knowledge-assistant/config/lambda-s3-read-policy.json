@@ -1,0 +1,14 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ReadOnlyTwoWorkbooks",
+      "Effect": "Allow",
+      "Action": "s3:GetObject",
+      "Resource": [
+        "arn:${AWS_PARTITION}:s3:::${DATA_BUCKET_NAME}/${DEPOT_OBJECT_KEY}",
+        "arn:${AWS_PARTITION}:s3:::${DATA_BUCKET_NAME}/${TRANSPORT_OBJECT_KEY}"
+      ]
+    }
+  ]
+}
