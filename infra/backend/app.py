@@ -191,12 +191,16 @@ def _create_app(allowed_host: str):
     server.add_tool(
         sources_status,
         title="List Dincer Logistics data sources",
-        annotations=read_only,
+        annotations=read_only.model_copy(
+            update={"title": "List Dincer Logistics data sources"}
+        ),
     )
     server.add_tool(
         query_data,
         title="Search Dincer Logistics data",
-        annotations=read_only,
+        annotations=read_only.model_copy(
+            update={"title": "Search Dincer Logistics data"}
+        ),
     )
     app = server.streamable_http_app()
     app.add_middleware(BaseHTTPMiddleware, dispatch=enforce_claude_origin)
