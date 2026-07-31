@@ -9,14 +9,4 @@
   },
   "homepage": "https://dincerlogistics.com/",
   "license": "MIT"
-}{
-  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
-  "name": "s3-knowledge-assistant",
-  "version": "0.1.5",
-  "description": "Dincer Logistics verilerini salt okunur kullanarak kaynaklı yanıtlar üretir.",
-  "author": {
-    "name": "Dincer Logistics"
-  },
-  "homepage": "https://dincerlogistics.com/",
-  "license": "MIT"
 }
