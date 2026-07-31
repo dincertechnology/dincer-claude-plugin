@@ -8,6 +8,7 @@
   "plugins": [
     {
       "name": "s3-knowledge-assistant",
+      "displayName": "Dincer Logistics",
       "source": "./plugins/s3-knowledge-assistant",
       "description": "Yetkili Dincer Logistics içeriklerini bulur, okur ve kaynak göstererek yanıtlar.",
       "category": "productivity",
