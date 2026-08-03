@@ -42,6 +42,8 @@ Resources:
       DeletionProtection: ACTIVE
       UsernameAttributes: [email]
       AutoVerifiedAttributes: [email]
+      EmailConfiguration:
+        EmailSendingAccount: COGNITO_DEFAULT
       MfaConfiguration: "OFF"
       AdminCreateUserConfig:
         AllowAdminCreateUserOnly: false
@@ -127,6 +129,8 @@ Resources:
       Handler: app.handler
       ReservedConcurrentExecutions: 10
       Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref QueryLimitTable
         - Version: "2012-10-17"
           Statement:
             - Effect: Allow
@@ -146,6 +150,8 @@ Resources:
           API_STAGE: ""
           MAX_FILE_BYTES: "15728640"
           MAX_SCAN_ROWS: "20000"
+          DAILY_QUERY_LIMIT: "20"
+          QUERY_LIMIT_TABLE: !Ref QueryLimitTable
       Events:
         McpPost:
           Type: HttpApi
@@ -192,6 +198,20 @@ Resources:
             ApiId: !Ref HttpApi
             Path: /oauth/register
             Method: POST
+
+  QueryLimitTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: user_day
+          AttributeType: S
+      KeySchema:
+        - AttributeName: user_day
+          KeyType: HASH
+      TimeToLiveSpecification:
+        AttributeName: expires_at
+        Enabled: true
 
   McpLogGroup:
     Type: AWS::Logs::LogGroup

@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import base64
+import json
 import os
+from datetime import datetime, timedelta, timezone
 from typing import Literal
 
 from mangum import Mangum
@@ -33,8 +36,12 @@ CLAUDE_OAUTH_CALLBACKS = tuple(
     origin + "/api/mcp/auth_callback" for origin in CLAUDE_ORIGINS
 )
 API_STAGE = os.environ.get("API_STAGE", "").strip("/")
+DAILY_QUERY_LIMIT = int(os.environ.get("DAILY_QUERY_LIMIT", "20"))
+QUERY_LIMIT_TABLE = os.environ.get("QUERY_LIMIT_TABLE", "")
+TURKEY_TZ = timezone(timedelta(hours=3))
 _cache: dict[str, tuple[str, bytes]] = {}
 _s3_client = None
+_ddb_client = None
 
 
 def _s3():
@@ -44,6 +51,77 @@ def _s3():
 
         _s3_client = boto3.client("s3")
     return _s3_client
+
+
+def _ddb():
+    global _ddb_client
+    if _ddb_client is None:
+        import boto3
+
+        _ddb_client = boto3.client("dynamodb")
+    return _ddb_client
+
+
+def _query_call_name(event: dict) -> str | None:
+    body = event.get("body")
+    if not body:
+        return None
+    if event.get("isBase64Encoded"):
+        body = base64.b64decode(body).decode("utf-8")
+    try:
+        payload = json.loads(body)
+    except (TypeError, ValueError):
+        return None
+    if not isinstance(payload, dict) or payload.get("method") != "tools/call":
+        return None
+    return payload.get("params", {}).get("name")
+
+
+def _enforce_daily_query_limit(event: dict) -> dict | None:
+    if _query_call_name(event) != "query_data":
+        return None
+
+    claims = event.get("requestContext", {}).get("authorizer", {}).get("jwt", {}).get("claims", {})
+    user_id = claims.get("sub")
+    if not user_id:
+        return {"statusCode": 401, "body": '{"error":"Unauthorized"}'}
+
+    now = datetime.now(TURKEY_TZ)
+    user_day = f"{user_id}#{now.date().isoformat()}"
+    expires_at = int((now + timedelta(days=2)).timestamp())
+    try:
+        _ddb().update_item(
+            TableName=QUERY_LIMIT_TABLE,
+            Key={"user_day": {"S": user_day}},
+            UpdateExpression=(
+                "SET #count = if_not_exists(#count, :zero) + :one, "
+                "expires_at = :expires_at"
+            ),
+            ConditionExpression="attribute_not_exists(#count) OR #count < :limit",
+            ExpressionAttributeNames={"#count": "query_count"},
+            ExpressionAttributeValues={
+                ":zero": {"N": "0"},
+                ":one": {"N": "1"},
+                ":limit": {"N": str(DAILY_QUERY_LIMIT)},
+                ":expires_at": {"N": str(expires_at)},
+            },
+        )
+    except Exception as exc:
+        code = getattr(exc, "response", {}).get("Error", {}).get("Code")
+        if code != "ConditionalCheckFailedException":
+            raise
+        return {
+            "statusCode": 429,
+            "headers": {"Content-Type": "application/json"},
+            "body": json.dumps(
+                {
+                    "error": "daily_query_limit_exceeded",
+                    "message": f"Günlük {DAILY_QUERY_LIMIT} soru hakkınız doldu.",
+                },
+                ensure_ascii=False,
+            ),
+        }
+    return None
 
 
 def _workbook_bytes(source: str) -> bytes:
@@ -219,6 +297,9 @@ def _create_app(allowed_host: str):
 
 
 def handler(event, context):
+    limited = _enforce_daily_query_limit(event)
+    if limited:
+        return limited
     allowed_host = event["requestContext"]["domainName"]
     app = _create_app(allowed_host)
     return Mangum(

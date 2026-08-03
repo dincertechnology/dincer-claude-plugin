@@ -53,6 +53,10 @@ parolasıyla kendi hesabını oluşturur ve e-postasına gelen kodu doğrular.
 Kullanıcı yalnızca Cognito uygulama hesabına sahip olur; AWS hesabına veya
 AWS Console'a erişemez.
 
+User Pool doğrulama kodlarını Cognito'nun varsayılan e-posta servisiyle gönderir;
+bu nedenle kayıt belirli bir e-posta alan adıyla sınırlandırılmaz. SES ile özel
+gönderim yapılandırılırsa SES hesabı production access durumunda olmalıdır.
+
 ## Plugin bağlantısı
 
 Canlı endpoint, Claude Desktop/web içinde özel connector olarak eklenir.
