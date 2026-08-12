@@ -198,6 +198,12 @@ Resources:
             ApiId: !Ref HttpApi
             Path: /oauth/register
             Method: POST
+        Favicon:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /favicon.ico
+            Method: GET
 
   QueryLimitTable:
     Type: AWS::DynamoDB::Table

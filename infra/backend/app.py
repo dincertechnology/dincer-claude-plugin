@@ -12,7 +12,7 @@ from mcp.server.transport_security import TransportSecuritySettings
 from mcp.types import ToolAnnotations
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
-from starlette.responses import JSONResponse
+from starlette.responses import JSONResponse, RedirectResponse
 
 from excel_reader import search_workbook
 from oauth_dcr import (
@@ -35,6 +35,7 @@ CLAUDE_ORIGINS = ("https://claude.ai", "https://claude.com")
 CLAUDE_OAUTH_CALLBACKS = tuple(
     origin + "/api/mcp/auth_callback" for origin in CLAUDE_ORIGINS
 )
+ICON_URL = "https://raw.githubusercontent.com/dincertechnology/dincer-claude-plugin/main/assets/dincer-connector-icon.png"
 API_STAGE = os.environ.get("API_STAGE", "").strip("/")
 DAILY_QUERY_LIMIT = int(os.environ.get("DAILY_QUERY_LIMIT", "20"))
 QUERY_LIMIT_TABLE = os.environ.get("QUERY_LIMIT_TABLE", "")
@@ -245,6 +246,10 @@ async def enforce_claude_origin(request: Request, call_next):
     return await call_next(request)
 
 
+async def favicon(request: Request) -> RedirectResponse:
+    return RedirectResponse(ICON_URL, status_code=302)
+
+
 def _create_app(allowed_host: str):
     server = FastMCP(
         "Dincer Logistics",
@@ -293,6 +298,7 @@ def _create_app(allowed_host: str):
         methods=["GET"],
     )
     app.add_route("/oauth/register", oauth_register, methods=["POST"])
+    app.add_route("/favicon.ico", favicon, methods=["GET"])
     return app
 
 

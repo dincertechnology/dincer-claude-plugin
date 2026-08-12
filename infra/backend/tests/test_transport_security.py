@@ -23,3 +23,11 @@ def test_rejects_unapproved_origin():
     metadata = "/.well-known/oauth-authorization-server"
     assert client.get(metadata, headers={"Origin": "https://claude.com"}).status_code == 200
     assert client.get(metadata, headers={"Origin": "https://evil.example"}).status_code == 403
+
+
+def test_favicon_redirects_to_dincer_icon():
+    client = TestClient(_create_app("testserver"))
+    response = client.get("/favicon.ico", follow_redirects=False)
+
+    assert response.status_code == 302
+    assert response.headers["location"].endswith("/assets/dincer-connector-icon.png")
