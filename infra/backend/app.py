@@ -4,6 +4,7 @@ import base64
 import json
 import os
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from typing import Literal
 
 from mangum import Mangum
@@ -12,7 +13,7 @@ from mcp.server.transport_security import TransportSecuritySettings
 from mcp.types import ToolAnnotations
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
-from starlette.responses import JSONResponse, RedirectResponse
+from starlette.responses import FileResponse, JSONResponse
 
 from excel_reader import search_workbook
 from oauth_dcr import (
@@ -35,7 +36,7 @@ CLAUDE_ORIGINS = ("https://claude.ai", "https://claude.com")
 CLAUDE_OAUTH_CALLBACKS = tuple(
     origin + "/api/mcp/auth_callback" for origin in CLAUDE_ORIGINS
 )
-ICON_URL = "https://raw.githubusercontent.com/dincertechnology/dincer-claude-plugin/main/assets/dincer-connector-icon.png"
+ICON_PATH = Path(__file__).with_name("dincer-connector-icon.png")
 API_STAGE = os.environ.get("API_STAGE", "").strip("/")
 DAILY_QUERY_LIMIT = int(os.environ.get("DAILY_QUERY_LIMIT", "20"))
 QUERY_LIMIT_TABLE = os.environ.get("QUERY_LIMIT_TABLE", "")
@@ -246,8 +247,12 @@ async def enforce_claude_origin(request: Request, call_next):
     return await call_next(request)
 
 
-async def favicon(request: Request) -> RedirectResponse:
-    return RedirectResponse(ICON_URL, status_code=302)
+async def favicon(request: Request) -> FileResponse:
+    return FileResponse(
+        ICON_PATH,
+        media_type="image/png",
+        headers={"Cache-Control": "public, max-age=3600"},
+    )
 
 
 def _create_app(allowed_host: str):

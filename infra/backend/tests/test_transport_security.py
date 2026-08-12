@@ -25,9 +25,10 @@ def test_rejects_unapproved_origin():
     assert client.get(metadata, headers={"Origin": "https://evil.example"}).status_code == 403
 
 
-def test_favicon_redirects_to_dincer_icon():
+def test_favicon_returns_dincer_icon():
     client = TestClient(_create_app("testserver"))
-    response = client.get("/favicon.ico", follow_redirects=False)
+    response = client.get("/favicon.ico")
 
-    assert response.status_code == 302
-    assert response.headers["location"].endswith("/assets/dincer-connector-icon.png")
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "image/png"
+    assert response.content.startswith(b"\x89PNG\r\n\x1a\n")
