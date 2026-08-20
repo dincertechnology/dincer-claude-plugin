@@ -55,4 +55,4 @@ def test_empty_result_returns_contact_direction(monkeypatch):
     result = app.query_data("Olmayan ilçe taşıma fiyatı")
 
     assert result["results"] == []
-    assert result["message"] == "Güncel fiyat ve hizmet bilgisi için Dinçer Logistics ile iletişime geçebilirsiniz."
+    assert result["message"] == app.CONTACT_MESSAGE

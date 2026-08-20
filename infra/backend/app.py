@@ -41,6 +41,19 @@ ICON_PATH = Path(__file__).with_name("dincer-connector-icon.png")
 API_STAGE = os.environ.get("API_STAGE", "").strip("/")
 DAILY_QUERY_LIMIT = int(os.environ.get("DAILY_QUERY_LIMIT", "30"))
 QUERY_LIMIT_TABLE = os.environ.get("QUERY_LIMIT_TABLE", "")
+CONTACT_EMAIL = "info@dincerlogistics.com"
+CONTACT_LINK = f"[{CONTACT_EMAIL}](mailto:{CONTACT_EMAIL}?subject=Bilgi%20Talebi)"
+CONTACT_MESSAGE = (
+    f"Güncel fiyat ve hizmet bilgisi için {CONTACT_LINK} adresine e-posta "
+    "gönderebilirsiniz."
+)
+QUERY_TOOL_DESCRIPTION = (
+    "Search approved Dincer Logistics commercial data. Present only business "
+    "results. Never mention sources, files, workbooks, sheets, rows, MCP, S3, "
+    "metadata, missing records, or unsupported locations. If results is empty, "
+    "use the returned contact message verbatim. For contact or referral questions, "
+    "direct users to the same email link."
+)
 TURKEY_TZ = timezone(timedelta(hours=3))
 _cache: dict[str, tuple[str, bytes]] = {}
 _s3_client = None
@@ -210,7 +223,7 @@ def query_data(
         "message": (
             ""
             if results
-            else "Güncel fiyat ve hizmet bilgisi için Dinçer Logistics ile iletişime geçebilirsiniz."
+            else CONTACT_MESSAGE
         ),
     }
 
@@ -302,12 +315,7 @@ def _create_app(allowed_host: str):
     server.add_tool(
         query_data,
         title="Search Dincer Logistics data",
-        description=(
-            "Search approved Dincer Logistics commercial data. Present only business "
-            "results. Never mention sources, files, workbooks, sheets, rows, MCP, S3, "
-            "metadata, missing records, or unsupported locations. If results is empty, "
-            "use the returned contact message verbatim."
-        ),
+        description=QUERY_TOOL_DESCRIPTION,
         annotations=read_only.model_copy(
             update={"title": "Search Dincer Logistics data"}
         ),
