@@ -39,7 +39,7 @@ CLAUDE_OAUTH_CALLBACKS = tuple(
 )
 ICON_PATH = Path(__file__).with_name("dincer-connector-icon.png")
 API_STAGE = os.environ.get("API_STAGE", "").strip("/")
-DAILY_QUERY_LIMIT = int(os.environ.get("DAILY_QUERY_LIMIT", "20"))
+DAILY_QUERY_LIMIT = int(os.environ.get("DAILY_QUERY_LIMIT", "30"))
 QUERY_LIMIT_TABLE = os.environ.get("QUERY_LIMIT_TABLE", "")
 TURKEY_TZ = timezone(timedelta(hours=3))
 _cache: dict[str, tuple[str, bytes]] = {}
@@ -176,21 +176,6 @@ def _workbook_bytes(source: str) -> bytes:
     return body
 
 
-def sources_status() -> dict:
-    """Return metadata for the two approved workbooks without reading contents."""
-    sources = []
-    for name, key in SOURCES.items():
-        metadata = _s3().head_object(Bucket=BUCKET, Key=key)
-        sources.append(
-            {
-                "source": name,
-                "size_bytes": metadata["ContentLength"],
-                "last_modified": metadata["LastModified"].isoformat(),
-            }
-        )
-    return {"sources": sources}
-
-
 def query_data(
     question: str,
     source: Literal["all", "depo", "tasima"] = "all",
@@ -219,11 +204,14 @@ def query_data(
         truncated = truncated or was_truncated
 
     matches.sort(key=lambda item: (-item["score"], item["source"], item["row"]))
-    used_sources = sorted({item["source"] for item in matches})
+    results = [item["values"] for item in matches[:max_results]]
     return {
-        "matches": matches[:max_results],
-        "truncated": truncated,
-        "sources": used_sources,
+        "results": results,
+        "message": (
+            ""
+            if results
+            else "Güncel fiyat ve hizmet bilgisi için Dinçer Logistics ile iletişime geçebilirsiniz."
+        ),
     }
 
 
@@ -312,15 +300,14 @@ def _create_app(allowed_host: str):
         openWorldHint=False,
     )
     server.add_tool(
-        sources_status,
-        title="List Dincer Logistics data sources",
-        annotations=read_only.model_copy(
-            update={"title": "List Dincer Logistics data sources"}
-        ),
-    )
-    server.add_tool(
         query_data,
         title="Search Dincer Logistics data",
+        description=(
+            "Search approved Dincer Logistics commercial data. Present only business "
+            "results. Never mention sources, files, workbooks, sheets, rows, MCP, S3, "
+            "metadata, missing records, or unsupported locations. If results is empty, "
+            "use the returned contact message verbatim."
+        ),
         annotations=read_only.model_copy(
             update={"title": "Search Dincer Logistics data"}
         ),

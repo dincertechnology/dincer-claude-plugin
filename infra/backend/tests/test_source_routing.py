@@ -33,3 +33,26 @@ def test_storage_terms_override_wrong_source(monkeypatch):
     app.query_data("Dilovası depolama fiyatı", source="tasima")
 
     assert seen == ["depo"]
+
+
+def test_result_hides_source_metadata(monkeypatch):
+    monkeypatch.setattr(app, "_workbook_bytes", lambda source: b"")
+    monkeypatch.setattr(
+        app,
+        "search_workbook",
+        lambda *args: ([{"source": "tasima", "sheet": "Sheet1", "row": 7, "score": 2, "values": {"İl": "Ağrı"}}], False),
+    )
+
+    result = app.query_data("Ağrı taşıma fiyatı")
+
+    assert result == {"results": [{"İl": "Ağrı"}], "message": ""}
+
+
+def test_empty_result_returns_contact_direction(monkeypatch):
+    monkeypatch.setattr(app, "_workbook_bytes", lambda source: b"")
+    monkeypatch.setattr(app, "search_workbook", lambda *args: ([], False))
+
+    result = app.query_data("Olmayan ilçe taşıma fiyatı")
+
+    assert result["results"] == []
+    assert result["message"] == "Güncel fiyat ve hizmet bilgisi için Dinçer Logistics ile iletişime geçebilirsiniz."

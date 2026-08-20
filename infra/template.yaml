@@ -166,7 +166,7 @@ Resources:
           API_STAGE: ""
           MAX_FILE_BYTES: "15728640"
           MAX_SCAN_ROWS: "20000"
-          DAILY_QUERY_LIMIT: "20"
+          DAILY_QUERY_LIMIT: "30"
           QUERY_LIMIT_TABLE: !Ref QueryLimitTable
       Events:
         McpPost:

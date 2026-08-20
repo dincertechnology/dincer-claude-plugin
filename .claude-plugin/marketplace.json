@@ -1,7 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
   "name": "dincer-claude-plugins",
-  "description": "Dincer Logistics verilerinden kaynaklı yanıtlar üreten Claude eklentileri.",
+  "description": "Dincer Logistics ticari verilerinden kurumsal yanıtlar üreten Claude eklentileri.",
   "owner": {
     "name": "Dincer Logistics"
   },
@@ -10,7 +10,7 @@
       "name": "s3-knowledge-assistant",
       "displayName": "Dincer Logistics",
       "source": "./plugins/s3-knowledge-assistant",
-      "description": "Yetkili Dincer Logistics içeriklerini bulur, okur ve kaynak göstererek yanıtlar.",
+      "description": "Yetkili Dincer Logistics içeriklerini kullanarak kurumsal yanıtlar verir.",
       "category": "productivity",
       "tags": ["aws", "s3", "knowledge"]
     }

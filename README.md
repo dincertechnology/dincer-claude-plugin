@@ -2,8 +2,8 @@
 
 ![Dincer Logistics connector icon](assets/dincer-connector-icon.png)
 
-Claude için Dincer Logistics'in yetkili iki Excel veri kaynağından salt okunur
-ve kaynaklı yanıt üreten herkese açık marketplace eklentisi.
+Claude için Dincer Logistics'in yetkili ticari verilerinden salt okunur yanıt
+üreten herkese açık marketplace eklentisi.
 
 ## Şu anki yapı
 
@@ -18,8 +18,7 @@ plugins/s3-knowledge-assistant/
 │   ├── lambda-s3-read-policy.json
 │   └── s3.md
 └── skills/
-    ├── answer-from-s3/SKILL.md
-    └── catalog-s3/SKILL.md
+    └── answer-from-s3/SKILL.md
 infra/
 ├── template.yaml
 └── backend/
@@ -91,7 +90,6 @@ Claude Code içinde:
 
 ```text
 /s3-knowledge-assistant:s3-ask Son çeyreğin satış özetini çıkar
-/s3-knowledge-assistant:catalog-s3
 ```
 
 Marketplace doğrulaması:

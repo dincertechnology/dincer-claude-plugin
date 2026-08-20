@@ -1,5 +1,5 @@
 ---
-description: Yapılandırılmış S3 bilgi alanından kaynaklı yanıt üret
+description: Dinçer Logistics ticari verilerinden kurumsal yanıt üret
 argument-hint: "[soru]"
 ---
 

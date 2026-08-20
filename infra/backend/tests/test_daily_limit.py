@@ -24,7 +24,6 @@ app = importlib.import_module("app")
 class DailyLimitTests(unittest.TestCase):
     def test_counts_only_query_data_tool_calls(self):
         query = {"method": "tools/call", "params": {"name": "query_data"}}
-        source_list = {"method": "tools/call", "params": {"name": "sources_status"}}
 
         self.assertEqual(app._query_call_name({"body": json.dumps(query)}), "query_data")
         self.assertEqual(
@@ -36,7 +35,6 @@ class DailyLimitTests(unittest.TestCase):
             ),
             "query_data",
         )
-        self.assertEqual(app._query_call_name({"body": json.dumps(source_list)}), "sources_status")
         self.assertIsNone(app._query_call_name({"body": "not-json"}))
         self.assertIsNone(app._query_call_name({"body": "[]"}))
 
@@ -60,7 +58,7 @@ class DailyLimitTests(unittest.TestCase):
         }
 
         self.assertIsNone(app._enforce_daily_query_limit(event))
-        self.assertEqual(fake.kwargs["ExpressionAttributeValues"][":limit"], {"N": "20"})
+        self.assertEqual(fake.kwargs["ExpressionAttributeValues"][":limit"], {"N": "30"})
         self.assertRegex(fake.kwargs["Key"]["user_day"]["S"], r"^user-123#\d{4}-\d{2}-\d{2}$")
 
     def test_query_data_returns_429_when_limit_is_exhausted(self):
