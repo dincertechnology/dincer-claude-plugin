@@ -57,7 +57,7 @@ Resources:
             Priority: 1
       Policies:
         PasswordPolicy:
-          MinimumLength: 14
+          MinimumLength: 8
           RequireLowercase: true
           RequireUppercase: true
           RequireNumbers: true
