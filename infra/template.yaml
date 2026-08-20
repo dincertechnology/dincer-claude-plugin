@@ -15,6 +15,10 @@ Parameters:
     Type: String
     NoEcho: true
     Description: Approved transport workbook object key
+  AssistantInstructionsParameterName:
+    Type: String
+    NoEcho: true
+    Description: SecureString parameter containing runtime assistant instructions
   CognitoDomainPrefix:
     Type: String
     Description: Globally unique lowercase Cognito domain prefix
@@ -133,16 +137,28 @@ Resources:
             TableName: !Ref QueryLimitTable
         - Version: "2012-10-17"
           Statement:
-            - Effect: Allow
+            - Sid: AllowOnlyApprovedWorkbooks
+              Effect: Allow
               Action: s3:GetObject
               Resource:
                 - !Sub "arn:${AWS::Partition}:s3:::${DataBucketName}/${DepotObjectKey}"
                 - !Sub "arn:${AWS::Partition}:s3:::${DataBucketName}/${TransportObjectKey}"
+            - Sid: DenyOtherObjects
+              Effect: Deny
+              Action: s3:GetObject
+              NotResource:
+                - !Sub "arn:${AWS::Partition}:s3:::${DataBucketName}/${DepotObjectKey}"
+                - !Sub "arn:${AWS::Partition}:s3:::${DataBucketName}/${TransportObjectKey}"
+            - Sid: ReadAssistantInstructions
+              Effect: Allow
+              Action: ssm:GetParameter
+              Resource: !Sub "arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter${AssistantInstructionsParameterName}"
       Environment:
         Variables:
           BUCKET_NAME: !Ref DataBucketName
           DEPOT_KEY: !Ref DepotObjectKey
           TRANSPORT_KEY: !Ref TransportObjectKey
+          ASSISTANT_INSTRUCTIONS_PARAMETER: !Ref AssistantInstructionsParameterName
           COGNITO_ISSUER: !Sub "https://cognito-idp.${AWS::Region}.${AWS::URLSuffix}/${UserPool}"
           COGNITO_SCOPE: dincer-data/read
           COGNITO_CLIENT_ID: !Ref UserPoolClient

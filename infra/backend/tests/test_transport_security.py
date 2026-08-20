@@ -4,7 +4,22 @@ from mcp.server.transport_security import (
 )
 from starlette.testclient import TestClient
 
+import app
 from app import CLAUDE_ORIGINS, _create_app
+
+
+def test_reads_runtime_instructions_from_ssm(monkeypatch):
+    class Ssm:
+        def get_parameter(self, **kwargs):
+            assert kwargs == {"Name": "/runtime/instructions", "WithDecryption": True}
+            return {"Parameter": {"Value": "runtime rules"}}
+
+    monkeypatch.delenv("ASSISTANT_INSTRUCTIONS", raising=False)
+    monkeypatch.setenv("ASSISTANT_INSTRUCTIONS_PARAMETER", "/runtime/instructions")
+    monkeypatch.setattr(app, "_instructions_cache", None)
+    monkeypatch.setattr(app, "_ssm_client", Ssm())
+
+    assert app._assistant_instructions() == "runtime rules"
 
 
 def test_rejects_unapproved_origin():

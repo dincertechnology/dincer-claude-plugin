@@ -4,10 +4,8 @@ Description: Public OAuth discovery and DCR routes for the Dincer MCP API
 Parameters:
   ApiId:
     Type: String
-    Default: 3wsieuxc42
   IntegrationId:
     Type: String
-    Default: erhhvbg
 
 Resources:
   AuthorizationServerMetadataRoute:
