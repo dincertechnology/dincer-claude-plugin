@@ -2,8 +2,8 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "s3-knowledge-assistant",
   "displayName": "Dincer Logistics",
-  "version": "0.1.6",
-  "description": "Dincer Logistics verilerini salt okunur kullanarak kaynaklı yanıtlar üretir.",
+  "version": "0.1.7",
+  "description": "Dincer Logistics depolama ve FTL/komple taşıma verilerini salt okunur kullanarak kurumsal yanıtlar üretir.",
   "author": {
     "name": "Dincer Logistics"
   },

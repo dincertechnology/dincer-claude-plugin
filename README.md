@@ -113,9 +113,9 @@ komutlarıyla kurabilir.
 
 ## Örnekler
 
-- "Depo kaynaklarında İstanbul için hangi kayıtlar var?"
-- "Taşıma fiyat listesinde Ankara çıkışlı eşleşmeleri bul."
-- "Yetkili veri kaynaklarının son güncellenme tarihlerini göster."
+- "Tuzla deposunun fiyatlarını ve teklif şartlarını özetle."
+- "Iğdır için kamyon fiyatını Gebze ve İzmir çıkışlı olarak paylaş."
+- "Gebze çıkışlı Adana kamyon, kırkayak ve tır fiyatlarını paylaş."
 
 ## Gizlilik ve destek
 

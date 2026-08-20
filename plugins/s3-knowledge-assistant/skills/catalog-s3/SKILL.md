@@ -8,6 +8,7 @@ description: Yapılandırılmış Amazon S3 bilgi alanındaki dosyaları keşfet
 Önce `${CLAUDE_PLUGIN_ROOT}/config/s3.md` dosyasını oku.
 
 1. `dincer-data` MCP sunucusunun `sources_status` aracını kullan.
-2. Dosya adı, boyut ve son değiştirilme zamanını göster.
-3. Her S3 yolunu kod biçiminde göster.
+2. Yalnızca hizmetlerin kullanılabilir olup olmadığını bildir.
+3. Dosya adı, object key, bucket adı, S3 yolu, dosya boyutu, değiştirilme zamanı
+   veya kaynak yapısı açıklama.
 4. Kullanıcıdan AWS kimlik bilgisi isteme.

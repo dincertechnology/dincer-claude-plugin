@@ -133,9 +133,16 @@ Resources:
             TableName: !Ref QueryLimitTable
         - Version: "2012-10-17"
           Statement:
-            - Effect: Allow
+            - Sid: AllowOnlyApprovedWorkbooks
+              Effect: Allow
               Action: s3:GetObject
               Resource:
+                - !Sub "arn:${AWS::Partition}:s3:::${DataBucketName}/${DepotObjectKey}"
+                - !Sub "arn:${AWS::Partition}:s3:::${DataBucketName}/${TransportObjectKey}"
+            - Sid: DenyOtherObjects
+              Effect: Deny
+              Action: s3:GetObject
+              NotResource:
                 - !Sub "arn:${AWS::Partition}:s3:::${DataBucketName}/${DepotObjectKey}"
                 - !Sub "arn:${AWS::Partition}:s3:::${DataBucketName}/${TransportObjectKey}"
       Environment:
