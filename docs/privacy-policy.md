@@ -60,6 +60,6 @@ effective date above will be updated when changes are published.
 
 ## Contact
 
-Dincer Logistics  
-[https://dincerlogistics.com/](https://dincerlogistics.com/)  
+Dincer Logistics
+[https://dincerlogistics.com/](https://dincerlogistics.com/)
 [info@dincerlojistik.com](mailto:info@dincerlojistik.com)
