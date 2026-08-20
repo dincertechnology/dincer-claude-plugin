@@ -56,3 +56,13 @@ def test_empty_result_returns_contact_direction(monkeypatch):
 
     assert result["results"] == []
     assert result["message"] == app.CONTACT_MESSAGE
+
+
+def test_contact_question_returns_contact_direction_with_results(monkeypatch):
+    monkeypatch.setattr(app, "_workbook_bytes", lambda source: b"")
+    monkeypatch.setattr(app, "search_workbook", lambda *args: ([{"İlçe": "Maltepe"}], False))
+
+    result = app.query_data("İletişim için kiminle konuşmalıyım?", source="tasima")
+
+    assert result["results"]
+    assert result["message"] == app.CONTACT_MESSAGE

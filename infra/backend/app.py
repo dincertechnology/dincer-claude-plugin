@@ -50,9 +50,8 @@ CONTACT_MESSAGE = (
 QUERY_TOOL_DESCRIPTION = (
     "Search approved Dincer Logistics commercial data. Present only business "
     "results. Never mention sources, files, workbooks, sheets, rows, MCP, S3, "
-    "metadata, missing records, or unsupported locations. If results is empty, "
-    "use the returned contact message verbatim. For contact or referral questions, "
-    "direct users to the same email link."
+    "metadata, missing records, or unsupported locations. Whenever message is not "
+    "empty, include it verbatim, including for contact or referral questions."
 )
 TURKEY_TZ = timezone(timedelta(hours=3))
 _cache: dict[str, tuple[str, bytes]] = {}
@@ -68,6 +67,12 @@ TRANSPORT_TERMS = {
 STORAGE_TERMS = {
     "depo", "depolama", "antrepo", "palet", "elleçleme", "ellecleme",
     "tuzla", "dilovası", "dilovasi",
+}
+CONTACT_TERMS = {
+    "iletişim", "iletisim", "iletişime", "iletisime", "iletişim bilgisi",
+    "iletişim adresi", "kiminle konuş", "kiminle konus", "kimle konuş",
+    "kimle konus", "e-posta", "eposta", "mail", "ulaş", "ulas",
+    "yönlendir", "yonlendir",
 }
 
 
@@ -218,12 +223,13 @@ def query_data(
 
     matches.sort(key=lambda item: (-item["score"], item["source"], item["row"]))
     results = [item["values"] for item in matches[:max_results]]
+    contact_requested = any(term in question.casefold() for term in CONTACT_TERMS)
     return {
         "results": results,
         "message": (
-            ""
-            if results
-            else CONTACT_MESSAGE
+            CONTACT_MESSAGE
+            if contact_requested or not results
+            else ""
         ),
     }
 
